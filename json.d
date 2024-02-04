@@ -7,7 +7,7 @@ void main()
 {
     JSONValue jroot;
     
-    JSONValue jputer = ["cock":true];
+    JSONValue jputer = ["iscool":true];
     
     jroot["puter"] = jputer;
     

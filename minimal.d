@@ -1,2 +1,2 @@
 import std;
-void main() { writeln("test"); }
+void main() { writeln("Hello world"); }
