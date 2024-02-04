@@ -127,6 +127,8 @@ void main()
     version (D_PreConditions) writeln("D_PreConditions");
     version (D_PostConditions) writeln("D_PostConditions");
     version (D_Invariants) writeln("D_Invariants");
+    // 2.105
+    version (VisionOS) writeln("VisionOS");
     
     // GDC specific
     version (GNU_SjLj_Exceptions) writeln("GNU_SjLj_Exceptions");
