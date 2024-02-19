@@ -9,6 +9,7 @@ Very useful scripts are `versions.d` and `features.d`.
 | Script | Description |
 |---|---|
 | windows/fpu.d | Attempt to use MSVC specific features. |
+| aa.d | Associated Array (aka HashMap, Dictionary) tests. |
 | cstreams.d | Re-opens the standard output stream, due to it being broken on Windows-betterC. |
 | dirfiber.d | Benchmark of various implementations of a multi-threaded `dirEntries`. |
 | features.d | Prints available compiler features. |
@@ -18,6 +19,7 @@ Very useful scripts are `versions.d` and `features.d`.
 | gen24.d | Family member required a text file in a format. |
 | json.d | Quick `std.json` tests. |
 | minimal.d | Smallest D source. |
+| randommangle.d | Randomly generate a mangled name, works with exports. |
 | strings.d | Quick string printing test. |
 | tokens.d | Print special tokens and keywords. |
 | types.d | Print type information. |
