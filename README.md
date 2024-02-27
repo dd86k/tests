@@ -13,6 +13,7 @@ Very useful scripts are `versions.d` and `features.d`.
 | cstreams.d | Re-opens the standard output stream, due to it being broken on Windows-betterC. |
 | dirfiber.d | Benchmark of various implementations of a multi-threaded `dirEntries`. |
 | features.d | Prints available compiler features. |
+| fetch.d | Using `requests`, fetch content via HTTP. |
 | floats.d | Quick float comparison and printing test. |
 | formatdec.d | Format decimal precision test. |
 | formathex.d | Tried out the printf `%#` specifier. |
