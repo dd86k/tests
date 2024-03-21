@@ -25,3 +25,4 @@ Very useful scripts are `versions.d` and `features.d`.
 | tokens.d | Print special tokens and keywords. |
 | types.d | Print type information. |
 | version.d | Print what compiler pre-defined versions are available. |
+| wave.d | Fun moving 0's and 1's. |
