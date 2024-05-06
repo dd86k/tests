@@ -11,18 +11,27 @@ string fversion(int version_)
 void supported(int minversion, string feature)
 {
     if (__VERSION__ < minversion) return;
-    writeln(fversion(minversion), ": ", feature);
+    writeln("- ", fversion(minversion), ": ", feature);
 }
+
+struct Feature { int minversion; string name; }
+immutable Feature[] features = [
+    { 2_068, "64-bit bswap" },
+    { 2_083, "getTargetInfo trait" },
+    { 2_092, "printf/scanf pragma" },
+    { 2_096, "noreturn bottom type" },
+    { 2_100, "core.int128 type" },
+    { 2_100, "@mustuse attribute" },
+    { 2_101, "classInstanceAlignment trait" },
+    { 2_105, "std.system.ISA" },
+    { 2_106, "std.traits.Unshared" },
+    { 2_107, "core.stdc.stdatomic" },
+];
 
 void main()
 {
     writeln("Compiler: ", __VENDOR__, " v", fversion(__VERSION__));
-    writeln("Compiler features:");
-    supported(2_068, "64-bit bswap");
-    supported(2_083, "getTargetInfo trait");
-    supported(2_092, "printf/scanf pragma");
-    supported(2_096, "noreturn bottom type");
-    supported(2_100, "core.int128 type");
-    supported(2_100, "@mustuse attribute");
-    supported(2_101, "classInstanceAlignment trait");
+    writeln("Features:");
+    foreach (ref feature; features)
+        with (feature) supported(minversion, name);
 }
