@@ -131,29 +131,38 @@ void main()
     version (VisionOS) writeln("VisionOS");
     
     // GDC specific
-    version (GNU_SjLj_Exceptions) writeln("GNU_SjLj_Exceptions");
-    version (GNU_SEH_Exceptions) writeln("GNU_SEH_Exceptions");
+    version (GNU_SjLj_Exceptions)   writeln("GNU_SjLj_Exceptions");
+    version (GNU_SEH_Exceptions)    writeln("GNU_SEH_Exceptions");
     version (GNU_DWARF2_Exceptions) writeln("GNU_DWARF2_Exceptions");
     
     // LDC specific
     version (LLVM) writeln("LLVM");
-    version (LDC_LLVM_200) writeln("LDC_LLVM_200");
-    version (LDC_LLVM_300) writeln("LDC_LLVM_300");
-    version (LDC_LLVM_400) writeln("LDC_LLVM_400");
-    version (LDC_LLVM_500) writeln("LDC_LLVM_500");
-    version (LDC_LLVM_600) writeln("LDC_LLVM_600");
-    version (LDC_LLVM_700) writeln("LDC_LLVM_700");
-    version (LDC_LLVM_800) writeln("LDC_LLVM_800");
-    version (LDC_LLVM_900) writeln("LDC_LLVM_900");
-    version (LDC_LLVM_1000) writeln("LDC_LLVM_1000");
-    version (LDC_LLVM_1100) writeln("LDC_LLVM_1100");
-    version (LDC_LLVM_1200) writeln("LDC_LLVM_1200");
-    version (LDC_LLVM_1300) writeln("LDC_LLVM_1300");
-    version (LDC_LLVM_1400) writeln("LDC_LLVM_1400");
-    version (LDC_LLVM_1500) writeln("LDC_LLVM_1500");
-    version (LDC_LLVM_1600) writeln("LDC_LLVM_1600");
-    version (LDC_LLVM_1700) writeln("LDC_LLVM_1700");
-    version (LDC_LLVM_1800) writeln("LDC_LLVM_1800");
-    version (LDC_LLVM_1900) writeln("LDC_LLVM_1900");
     version (LDC_LLVM_2000) writeln("LDC_LLVM_2000");
+    else version (LDC_LLVM_1900) writeln("LDC_LLVM_1900");
+    else version (LDC_LLVM_1800) writeln("LDC_LLVM_1800");
+    else version (LDC_LLVM_1700) writeln("LDC_LLVM_1700");
+    else version (LDC_LLVM_1600) writeln("LDC_LLVM_1600");
+    else version (LDC_LLVM_1500) writeln("LDC_LLVM_1500");
+    else version (LDC_LLVM_1400) writeln("LDC_LLVM_1400");
+    else version (LDC_LLVM_1300) writeln("LDC_LLVM_1300");
+    else version (LDC_LLVM_1200) writeln("LDC_LLVM_1200");
+    else version (LDC_LLVM_1100) writeln("LDC_LLVM_1100");
+    else version (LDC_LLVM_1000) writeln("LDC_LLVM_1000");
+    else version (LDC_LLVM_900)  writeln("LDC_LLVM_900");
+    else version (LDC_LLVM_800)  writeln("LDC_LLVM_800");
+    else version (LDC_LLVM_700)  writeln("LDC_LLVM_700");
+    else version (LDC_LLVM_600)  writeln("LDC_LLVM_600");
+    else version (LDC_LLVM_500)  writeln("LDC_LLVM_500");
+    else version (LDC_LLVM_400)  writeln("LDC_LLVM_400");
+    else version (LDC_LLVM_300)  writeln("LDC_LLVM_300");
+    else version (LDC_LLVM_200)  writeln("LDC_LLVM_200");
+    
+    // Noticed in core.sys.freebsd.config
+    version (FreeBSD_14) writeln("FreeBSD_14");
+    else version (FreeBSD_13) writeln("FreeBSD_13");
+    else version (FreeBSD_12) writeln("FreeBSD_12");
+    else version (FreeBSD_11) writeln("FreeBSD_11");
+    else version (FreeBSD_10) writeln("FreeBSD_10");
+    else version (FreeBSD_9) writeln("FreeBSD_9");
+    else version (FreeBSD_8) writeln("FreeBSD_8");
 }
