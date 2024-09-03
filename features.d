@@ -26,6 +26,8 @@ immutable Feature[] features = [
     { 2_105, "std.system.ISA" },
     { 2_106, "std.traits.Unshared" },
     { 2_107, "core.stdc.stdatomic" },
+    { 2_108, "Interpolated Expression Sequences" },
+    { 2_109, "Bitfield Introspection Capability + __ctfeWrite" },
 ];
 
 void main()
