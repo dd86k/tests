@@ -10,13 +10,14 @@ string fversion(int version_)
 
 void supported(int minversion, string feature)
 {
-    if (__VERSION__ < minversion) return;
-    writeln("- ", fversion(minversion), ": ", feature);
+    writeln(
+        __VERSION__ < minversion ? "- " : "+ ",
+        fversion(minversion), ": ", feature);
 }
 
 struct Feature { int minversion; string name; }
 immutable Feature[] features = [
-    { 2_068, "64-bit bswap" },
+    { 2_068, "core.bitop 64-bit bswap" },
     { 2_083, "getTargetInfo trait" },
     { 2_092, "printf/scanf pragma" },
     { 2_096, "noreturn bottom type" },
@@ -27,7 +28,7 @@ immutable Feature[] features = [
     { 2_106, "std.traits.Unshared" },
     { 2_107, "core.stdc.stdatomic" },
     { 2_108, "Interpolated Expression Sequences" },
-    { 2_109, "Bitfield Introspection Capability + __ctfeWrite" },
+    { 2_109, "Bitfield Introspection Capability, __ctfeWrite" },
 ];
 
 void main()
