@@ -4,7 +4,7 @@ void main()
 {
     // Oficial versions
     version (DigitalMars) writeln("DigitalMars");
-    version (GNU)  writeln("GNU");
+    version (GNU) writeln("GNU");
     version (LDC) writeln("LDC");
     version (SDC) writeln("SDC");
     version (Windows) writeln("Windows");
@@ -15,7 +15,6 @@ void main()
     version (iOS) writeln("iOS");
     version (TVOS) writeln("TVOS");
     version (WatchOS) writeln("WatchOS");
-    version (VisionOS) writeln("VisionOS");
     version (FreeBSD) writeln("FreeBSD");
     version (OpenBSD) writeln("OpenBSD");
     version (NetBSD) writeln("NetBSD");
@@ -127,6 +126,7 @@ void main()
     version (D_PreConditions) writeln("D_PreConditions");
     version (D_PostConditions) writeln("D_PostConditions");
     version (D_Invariants) writeln("D_Invariants");
+    
     // 2.105
     version (VisionOS) writeln("VisionOS");
     
