@@ -189,14 +189,14 @@ template longToString(ulong n1)
 
 enum FUNCNAME = longToString!(xorShift!());
 
-pragma(msg, FUNCNAME);
-
-export
+// NOTE: export works too!
 pragma(mangle, FUNCNAME)
 void example()
 {
     import std.stdio : writeln;
-    writeln(":)");
+    
+    writeln("Function : ", __FUNCTION__);
+    writeln("Mangled  : ", example.mangleof);
 }
 
 void main()
