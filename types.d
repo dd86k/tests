@@ -1,47 +1,78 @@
 import std.stdio;
+import std.conv : text;
 
-//TODO: Redo with array of TypeInfo (typeid(T))
+immutable int padding = 12;
 
-immutable int padding = 10;
-
-void printin(T)(string altname = null)
+void printval(T)(string name, T val, string fmt)
 {
-    writefln("%*s  init=%s\tmin=%s\tmax=%s",
-        padding, altname ? altname : T.stringof,
-        T.init, T.min, T.max);
+    writefln("%*s(%%"~fmt~"): %"~fmt, padding, name, val);
 }
-void printch(T)()
+void print(T)(string altname = null)
 {
-    writefln("%*s  init=%u\tmin=%u\tmax=%u",
-        padding, T.stringof,
-        T.init, T.min, T.max);
-}
-void printfp(T)()
-{
-    writefln("%*s  dig=%s\tmant_dig=%s\tepsilon=%s\tmin_normal=%s\tmax=%s\tinit=%s",
-        padding, T.stringof,
-        T.dig, T.mant_dig, T.epsilon, T.min_normal, T.max, T.init);
+    writeln;
+    if (altname)
+        writeln(altname, " (", T.stringof, ")");
+    else
+        writeln(T.stringof);
+    
+    // Character types
+    static if (is(T == char) || is(T == wchar) || is(T == dchar))
+    {
+        printval!T("init", T.init, "d");
+        printval!T("min", T.min, "d");
+        printval!T("max", T.max, "d");
+    }
+    // Float types
+    else static if (is(T == float) || is(T == double) || is(T == real))
+    {
+        printval!T("init", T.init, "s");
+        printval!T("max", T.max, "s");
+        printval!T("dig", T.dig, "s");
+        printval!T("mant_dig", T.mant_dig, "s");
+        printval!T("epsilon", T.epsilon, "s");
+        printval!T("min_normal", T.min_normal, "s");
+    }
+    // Integer types (last due to int promotion)
+    else static if (is(T == byte) || is(T == ubyte) ||
+        is(T == short) || is(T == ushort) ||
+        is(T == int) || is(T == uint) ||
+        is(T == long) || is(T == ulong))
+    {
+        printval!T("init", T.init, "s");
+        printval!T("min", T.min, "s");
+        printval!T("max", T.max, "s");
+        printval!T("min", T.min, "u");
+        printval!T("max", T.max, "u");
+        printval!T("min", T.min, "d");
+        printval!T("max", T.max, "d");
+        printval!T("min", T.min, "x");
+        printval!T("max", T.max, "x");
+        printval!T("min", T.min, "o");
+        printval!T("max", T.max, "o");
+    }
+    else
+        static assert(false, text("Unfit type: ", T.stringof));
 }
 
 void main()
 {
     // Integrals
-    printin!byte;
-    printin!ubyte;
-    printin!short;
-    printin!ushort;
-    printin!int;
-    printin!uint;
-    printin!long;
-    printin!ulong;
-    printin!size_t("size_t");
-    printin!ptrdiff_t("ptrdiff_t");
+    print!byte;
+    print!ubyte;
+    print!short;
+    print!ushort;
+    print!int;
+    print!uint;
+    print!long;
+    print!ulong;
+    print!size_t("size_t");
+    print!ptrdiff_t("ptrdiff_t");
     // Characters
-    printch!char;
-    printch!wchar;
-    printch!dchar;
+    print!char;
+    print!wchar;
+    print!dchar;
     // Floats
-    printfp!float;
-    printfp!double;
-    printfp!real; // NOTE: Still uses x87 types
+    print!float;
+    print!double;
+    print!real; // NOTE: `real` depends on the compiler and target
 }
