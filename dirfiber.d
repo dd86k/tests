@@ -1,17 +1,14 @@
-import std.stdio;
-import std.getopt;
-import std.file;
-import std.conv : to;
+import core.memory;
+import core.thread;
 import std.algorithm.sorting;
+import std.concurrency;
+import std.conv : to;
 import std.datetime;
 import std.datetime.stopwatch;
-import std.concurrency;
+import std.file;
+import std.getopt;
 import std.parallelism;
-import core.thread;
-import core.thread.fiber;
-import core.memory;
-
-//immutable Duration timeout = 10.usecs; //1.msecs;
+import std.stdio;
 
 struct Test
 {
@@ -27,14 +24,21 @@ int main(string[] args)
     Duration timeout = 10.usecs;
     GetoptResult res = void;
     try res = getopt(args,
-        "msecs", "", (string _, string v) {
-            timeout = dur!"msecs"(to!long(v));
-        },
+        "msecs", "Set timer sleep duration in milliseconds",
+            (string _, string v) {
+                timeout = dur!"msecs"(to!long(v));
+            },
     );
     catch (Exception ex)
     {
         stderr.writeln("error: ", ex.msg);
         return 1;
+    }
+    
+    if (res.helpWanted)
+    {
+        defaultGetoptPrinter("Multithread tests", res.options);
+        return 0;
     }
     
     if (args.length <= 1)
@@ -44,7 +48,6 @@ int main(string[] args)
     }
     
     string dir = args[1];
-    
     if (isDir(dir) == false)
     {
         stderr.writeln("I said, give me a directory");
@@ -74,7 +77,7 @@ int main(string[] args)
     foreach (ref result; tests.sort!"a.time < b.time"())
     {
         SimpleDuration sd = simplerDuration(result.time);
-        writefln("%2d. %4d %2s, %s", ++i, sd.base, sd.unit, result.name);
+        writefln("%2d. %4d %-2s, %s", ++i, sd.base, sd.unit, result.name);
         
         writefln("%15s used=%dK",
             "GC",
