@@ -409,7 +409,10 @@ class ConcurrentQueue(T)
                 pblock.wait();
             }
 
-            elements[tail] = cast(shared) value;
+            // BUG: Compiler would complain about Msg3Entry not having an assignment operator
+            //elements[tail] = value;
+            import core.stdc.string : memcpy;
+            memcpy(cast(void*)(elements.ptr + tail), &value, T.sizeof);
             tail = (tail+1) % cap;
         }
 
@@ -421,7 +424,6 @@ class ConcurrentQueue(T)
     /// This will block if the queue is empty.
     shared T pop()
     {
-        T value;
         synchronized (mutex)
         {
             while (isEmpty())
@@ -432,14 +434,11 @@ class ConcurrentQueue(T)
                 cblock.wait();
             }
 
-            value = cast(T) elements[head];
+            // Unblock a producer.
+            pblock.notify();
             head = (head+1) % cap;
+            return cast(T) elements[head];
         }
-
-        // Unblock a producer.
-        pblock.notify();
-
-        return value;
     }
 
     /// This simply blocks until all the elements have been drained.
@@ -468,13 +467,13 @@ class ConcurrentQueue(T)
 }
 
 // Now that the queue is set up, the actual processing part is pretty simple.
-
+struct Msg3Entry { DirEntry entry; Duration timeout; }
 void testG(string path, Duration timeout)
 {
     // Single producer, multple consumer (SPMC) queue.
     // Now that we only have a single queue, we can afford to make it bigger
     // to minimize blocking.
-    shared ConcurrentQueue!(Msg2Entry) rqsd = new shared ConcurrentQueue!(Msg2Entry)(32);
+    shared ConcurrentQueue!(Msg3Entry) rqsd = new shared ConcurrentQueue!(Msg3Entry)(32);
 
     // Just like with testE, we use a thread pool to avoid excessive
     // thread creation/destruction overhead.
@@ -488,7 +487,7 @@ void testG(string path, Duration timeout)
     // to do is to just push data to the queue.
     foreach (entry; dirEntries(path, SpanMode.breadth))
     {
-        rqsd.push(Msg2Entry(entry, timeout));
+        rqsd.push(Msg3Entry(entry, timeout));
     }
 
     // After we're done pushing, close it to signal the end of transmission.
@@ -497,7 +496,7 @@ void testG(string path, Duration timeout)
     thread_joinAll();
 }
 
-void testQueueConsumer(shared ConcurrentQueue!(Msg2Entry) queue)
+void testQueueConsumer(shared ConcurrentQueue!(Msg3Entry) queue)
 {
     // The consumer side simply needs to keep popping things
     // off the queue until it is closed.
@@ -505,7 +504,7 @@ void testQueueConsumer(shared ConcurrentQueue!(Msg2Entry) queue)
     {
         try
         {
-            Msg2Entry value = queue.pop();
+            Msg3Entry value = queue.pop();
             dowork(value.entry, value.timeout);
         }
         catch (QueueClosedException)
