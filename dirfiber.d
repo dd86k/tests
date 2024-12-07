@@ -151,6 +151,8 @@ void testA(string path, Duration timeout)
     {
         spawn(&iterateConcurrentEntry, entry, timeout);
     }
+
+    thread_joinAll();
 }
 void iterateConcurrentEntry(DirEntry entry, Duration timeout)
 {
@@ -164,6 +166,8 @@ void testB(string path, Duration timeout)
     {
         sleepnow(entry, timeout);
     }
+
+    thread_joinAll();
 }
 
 // Test: parallel with eight tasks per thread
@@ -177,6 +181,8 @@ void testC(string path, Duration timeout)
     {
         sleepnow(entry, timeout);
     }
+
+    thread_joinAll();
 }
 
 // Test: Message-based method with a manually-created thread pool
@@ -209,6 +215,8 @@ void testD(string path, Duration timeout)
     {
         receiveOnly!MsgCloseAck;
     }
+
+    thread_joinAll();
 }
 struct MsgEntry
 {
@@ -267,6 +275,8 @@ void testE(string path, Duration timeout)
     {
         receiveOnly!MsgCloseAck;
     }
+
+    thread_joinAll();
 }
 void testEWorker(Tid parentId)
 {
@@ -294,6 +304,8 @@ void testF(string path, Duration timeout)
         send(queuer, Msg2Entry(entry, timeout));
     }
     send(queuer, Msg2Done());
+
+    thread_joinAll();
 }
 struct Msg2Entry { DirEntry entry; Duration timeout; }
 struct Msg2Done {}
