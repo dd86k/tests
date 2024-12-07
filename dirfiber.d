@@ -78,9 +78,9 @@ int main(string[] args)
     foreach (ref result; tests.sort!"a.time < b.time"())
     {
         SimpleDuration sd = simplerDuration(result.time);
-        writefln("%2d. %4d %-2s, %s", ++i, sd.base, sd.unit, result.name);
+        writefln("%2d. %10.3f %-2s, %s", ++i, sd.base, sd.unit, result.name);
         
-        writefln("%15s used=%dK",
+        writefln("%21s used=%dK",
             "GC",
             (result.gc1.usedSize - result.gc0.usedSize) / 1024
         );
@@ -90,7 +90,7 @@ int main(string[] args)
 
 struct SimpleDuration
 {
-    ulong base;
+    double base;
     string unit;
 }
 SimpleDuration simplerDuration(Duration d)
@@ -98,13 +98,11 @@ SimpleDuration simplerDuration(Duration d)
     // NOTE: static immutable does avoid recreating Duration instances
     //       but for the sake of testing, this is pointless
     if (d >= 1.seconds)
-        return SimpleDuration(d.total!"seconds"(), "s");
+        return SimpleDuration(d.total!"msecs"() / 1000.0, "s");
     if (d >= 1.msecs)
-        return SimpleDuration(d.total!"msecs"(), "ms");
+        return SimpleDuration(d.total!"usecs"() / 1000.0, "ms");
     if (d >= 1.usecs)
-        return SimpleDuration(d.total!"usecs"(), "µs");
-    if (d >= 1.hnsecs)
-        return SimpleDuration(d.total!"hnsecs"(), "hn");
+        return SimpleDuration(d.total!"nsecs"() / 1000.0, "µs");
     return SimpleDuration(d.total!"nsecs"(), "ns");
 }
 
@@ -124,7 +122,7 @@ void bench(ref Test test, string dir, Duration timeout)
     test.gc1 = GC.stats();
     test.time = sw.peek();
 }
-void sleepnow(ref DirEntry entry, Duration timeout)
+void dowork(ref DirEntry entry, Duration timeout)
 {
     //writeln("entry: ", entry.name);
     Thread.sleep(timeout);
@@ -137,7 +135,7 @@ void testNormal(string path, Duration timeout)
 {
     foreach (entry; dirEntries(path, SpanMode.breadth))
     {
-        sleepnow(entry, timeout);
+        dowork(entry, timeout);
     }
 }
 
@@ -156,7 +154,7 @@ void testA(string path, Duration timeout)
 }
 void iterateConcurrentEntry(DirEntry entry, Duration timeout)
 {
-    sleepnow(entry, timeout);
+    dowork(entry, timeout);
 }
 
 // Test: parallel with one task per thread
@@ -164,7 +162,7 @@ void testB(string path, Duration timeout)
 {
     foreach (entry; parallel(dirEntries(path, SpanMode.breadth), 1))
     {
-        sleepnow(entry, timeout);
+        dowork(entry, timeout);
     }
 
     thread_joinAll();
@@ -179,7 +177,7 @@ void testC(string path, Duration timeout)
 {
     foreach (entry; parallel(dirEntries(path, SpanMode.breadth), 4))
     {
-        sleepnow(entry, timeout);
+        dowork(entry, timeout);
     }
 
     thread_joinAll();
@@ -233,7 +231,7 @@ void testDWorker(Tid parentId)
     {
         receive(
             (MsgEntry entry) {
-                sleepnow(entry.entry, entry.timeout);
+                dowork(entry.entry, entry.timeout);
             },
             (MsgClose creq) {
                 send(parentId, MsgCloseAck());
@@ -293,7 +291,7 @@ void testEWorker(Tid parentId)
     {
         receive(
             (MsgEntry entry) {
-                sleepnow(entry.entry, entry.timeout);
+                dowork(entry.entry, entry.timeout);
             },
             (MsgClose creq) {
                 send(parentId, MsgCloseAck());
@@ -334,7 +332,7 @@ void testSynchronizedQueuer()
 }
 void testSynchronizedWorker(DirEntry entry, Duration timeout)
 {
-    sleepnow(entry, timeout);
+    dowork(entry, timeout);
 }
 
 // Some theory first: we assume that (1) communication between the sides
@@ -508,7 +506,7 @@ void testQueueConsumer(shared ConcurrentQueue!(Msg2Entry) queue)
         try
         {
             Msg2Entry value = queue.pop();
-            sleepnow(value.entry, value.timeout);
+            dowork(value.entry, value.timeout);
         }
         catch (QueueClosedException)
         {
