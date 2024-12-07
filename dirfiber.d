@@ -64,6 +64,7 @@ int main(string[] args)
         { "(Test D) Message-blocking(4) model", &testD },
         { "(Test E) Message-throw(4) model", &testE },
         { "(Test F) Producer-consumer(4) model", &testF },
+        { "(Test G) SPMC Queue(4) model", &testG },
     ];
     
     // TODO: GC metrics
@@ -150,6 +151,8 @@ void testA(string path, Duration timeout)
     {
         spawn(&iterateConcurrentEntry, entry, timeout);
     }
+
+    thread_joinAll();
 }
 void iterateConcurrentEntry(DirEntry entry, Duration timeout)
 {
@@ -163,6 +166,8 @@ void testB(string path, Duration timeout)
     {
         sleepnow(entry, timeout);
     }
+
+    thread_joinAll();
 }
 
 // Test: parallel with eight tasks per thread
@@ -176,6 +181,8 @@ void testC(string path, Duration timeout)
     {
         sleepnow(entry, timeout);
     }
+
+    thread_joinAll();
 }
 
 // Test: Message-based method with a manually-created thread pool
@@ -208,6 +215,8 @@ void testD(string path, Duration timeout)
     {
         receiveOnly!MsgCloseAck;
     }
+
+    thread_joinAll();
 }
 struct MsgEntry
 {
@@ -249,9 +258,17 @@ void testE(string path, Duration timeout)
     size_t cur;
     foreach (entry; dirEntries(path, SpanMode.breadth))
     {
-        try send(pool[cur], MsgEntry(entry, timeout));
-        catch (MailboxFull) {} // try next
-        if (++cur >= POOLSIZE) cur = 0;
+        bool sent = false;
+        while (!sent)
+        {
+            try
+            {
+                send(pool[cur], MsgEntry(entry, timeout));
+                sent = true;
+            }
+            catch (MailboxFull) {} // try next
+            if (++cur >= POOLSIZE) cur = 0;
+        }
     }
     
     // NOTE: Usually you'd want your replies back
@@ -266,6 +283,8 @@ void testE(string path, Duration timeout)
     {
         receiveOnly!MsgCloseAck;
     }
+
+    thread_joinAll();
 }
 void testEWorker(Tid parentId)
 {
@@ -293,6 +312,8 @@ void testF(string path, Duration timeout)
         send(queuer, Msg2Entry(entry, timeout));
     }
     send(queuer, Msg2Done());
+
+    thread_joinAll();
 }
 struct Msg2Entry { DirEntry entry; Duration timeout; }
 struct Msg2Done {}
@@ -314,4 +335,184 @@ void testSynchronizedQueuer()
 void testSynchronizedWorker(DirEntry entry, Duration timeout)
 {
     sleepnow(entry, timeout);
+}
+
+// Some theory first: we assume that (1) communication between the sides
+// isn't very chatty, and (2) the consumers are, on average, heavier than
+// the producers. In this case, having a global queue is the most optimal
+// strategy, since it allows each consumer to have access to all
+// currently-available jobs.
+// Unfortunately D stdlib doesn't seem to include an implementation of a
+// thread-safe queue, so we need to implement one ourselves.
+
+import core.sync.condition;
+import core.sync.mutex;
+import core.thread.osthread;
+
+// Simple concurrent queue implementation akin to those available in Go or Java.
+// Could probably use some more optimization.
+class QueueClosedException: Exception { this() { super("Queue is closed"); } }
+class ConcurrentQueue(T)
+{
+    private T[]    elements;
+    private size_t head, tail, cap;
+    private bool   isClosed;
+
+    // For synchronization.
+    Mutex     mutex;
+    Condition cblock; // Signals whether a consumer is blocked.
+    Condition pblock; // Signals whether a producer is blocked.
+
+    /// Construct a queue of capacity `cap`.
+    /// For best performance, it is recommened for `cap` to be a compile-time constant
+    /// that is a power of two.
+    this(size_t cap)
+    {
+        if (cap < 2)
+            throw new Exception("cap too small, need at least 2!");
+        elements = new T[cap];
+        head = tail = 0;
+        this.cap = cap;
+        isClosed = false;
+
+        mutex = new Mutex;
+        cblock = new Condition(mutex);
+        pblock = new Condition(mutex);
+    }
+
+    private shared bool isEmpty()
+    {
+        synchronized (mutex)
+        {
+            return head == tail;
+        }
+    }
+
+    private shared bool isFull()
+    {
+        synchronized (mutex)
+        {
+            return (tail+1) % cap == head;
+        }
+    }
+
+    /// Push an item to the queue.
+    /// This will block if the queue is full.
+    shared void push(T value)
+    {
+        synchronized (mutex)
+        {
+            if (isClosed)
+                throw new QueueClosedException();
+
+            while (isFull())
+            {
+                // The queue is full, so block to let the consumers run.
+                pblock.wait();
+            }
+
+            elements[tail] = cast(shared) value;
+            tail = (tail+1) % cap;
+        }
+
+        // Unblock a consumer.
+        cblock.notify();
+    }
+
+    /// Pop an item from the queue.
+    /// This will block if the queue is empty.
+    shared T pop()
+    {
+        T value;
+        synchronized (mutex)
+        {
+            while (isEmpty())
+            {
+                if (isClosed)
+                    throw new QueueClosedException();
+                // The queue is empty, so block to let the producers run.
+                cblock.wait();
+            }
+
+            value = cast(T) elements[head];
+            head = (head+1) % cap;
+        }
+
+        // Unblock a producer.
+        pblock.notify();
+
+        return value;
+    }
+
+    /// This simply blocks until all the elements have been drained.
+    shared void waitForDrain()
+    {
+        synchronized (mutex)
+        {
+            while(!isEmpty())
+                pblock.wait();
+        }
+    }
+
+    /// Closes the queue, signalling that no more items will be pushed.
+    /// This still allows existing items to be drained off the queue.
+    shared void close()
+    {
+        synchronized (mutex)
+        {
+            isClosed = true;
+        }
+
+        // Unblock both sides of the queue.
+        cblock.notifyAll();
+        pblock.notifyAll();
+    }
+}
+
+// Now that the queue is set up, the actual processing part is pretty simple.
+
+void testG(string path, Duration timeout)
+{
+    // Single producer, multple consumer (SPMC) queue.
+    // Now that we only have a single queue, we can afford to make it bigger
+    // to minimize blocking.
+    shared ConcurrentQueue!(Msg2Entry) rqsd = new shared ConcurrentQueue!(Msg2Entry)(32);
+
+    // Just like with testE, we use a thread pool to avoid excessive
+    // thread creation/destruction overhead.
+    enum POOLSIZE = 4;
+    for (size_t i; i < POOLSIZE; ++i)
+    {
+        spawn(&testQueueConsumer, rqsd);
+    }
+
+    // Now that the thread pool is set up the only thing this thread needs
+    // to do is to just push data to the queue.
+    foreach (entry; dirEntries(path, SpanMode.breadth))
+    {
+        rqsd.push(Msg2Entry(entry, timeout));
+    }
+
+    // After we're done pushing, close it to signal the end of transmission.
+    rqsd.close();
+
+    thread_joinAll();
+}
+
+void testQueueConsumer(shared ConcurrentQueue!(Msg2Entry) queue)
+{
+    // The consumer side simply needs to keep popping things
+    // off the queue until it is closed.
+    while (true)
+    {
+        try
+        {
+            Msg2Entry value = queue.pop();
+            sleepnow(value.entry, value.timeout);
+        }
+        catch (QueueClosedException)
+        {
+            return;
+        }
+    }
 }
