@@ -258,9 +258,17 @@ void testE(string path, Duration timeout)
     size_t cur;
     foreach (entry; dirEntries(path, SpanMode.breadth))
     {
-        try send(pool[cur], MsgEntry(entry, timeout));
-        catch (MailboxFull) {} // try next
-        if (++cur >= POOLSIZE) cur = 0;
+        bool sent = false;
+        while (!sent)
+        {
+            try
+            {
+                send(pool[cur], MsgEntry(entry, timeout));
+                sent = true;
+            }
+            catch (MailboxFull) {} // try next
+            if (++cur >= POOLSIZE) cur = 0;
+        }
     }
     
     // NOTE: Usually you'd want your replies back
