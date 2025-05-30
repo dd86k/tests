@@ -11,7 +11,7 @@ string fversion(int version_)
 void supported(int minversion, string feature)
 {
     writeln(
-        __VERSION__ < minversion ? "- " : "+ ",
+        __VERSION__ >= minversion ? "+ " : "- ",
         fversion(minversion), ": ", feature);
 }
 
@@ -29,6 +29,7 @@ immutable Feature[] features = [
     { 2_107, "core.stdc.stdatomic" },
     { 2_108, "Interpolated Expression Sequences" },
     { 2_109, "Bitfield Introspection Capability, __ctfeWrite" },
+    { 2_111, "__rvalue" },
 ];
 
 void main()
