@@ -19,8 +19,9 @@ struct Feature { int minversion; string name; }
 immutable Feature[] features = [
     { 2_067, "GC options" },
     { 2_068, "core.bitop 64-bit bswap" },
-    { 2_076, "-betterC enhancements" },
+    { 2_076, "-betterC enhancements (no phobos)" },
     { 2_079, "Eponymous std.exception.enforce, std.experimental.all" },
+    { 2_081, "DIP 1009: Expression-Based Contract Syntax" },
     { 2_083, "getTargetInfo trait" },
     { 2_086, "import std" },
     { 2_087, "multithread GC sweep" },
@@ -34,7 +35,7 @@ immutable Feature[] features = [
     { 2_106, "std.traits.Unshared" },
     { 2_107, "core.stdc.stdatomic" },
     { 2_108, "Interpolated Expression Sequences, call-site __FILE__" },
-    { 2_109, "Bitfield Introspection Capability, __ctfeWrite, core.sys.linux.sys.mount" },
+    { 2_109, "Bitfield Introspection Capability, __ctfeWrite, linux sys.mount" },
     { 2_111, "__rvalue, DMD -oq, Placement New Expression" },
 ];
 
